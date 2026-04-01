@@ -37,23 +37,19 @@ services:
 
   # --- MESSAGE BROKER (KAFKA) ---
   zookeeper:
-    image: bitnami/zookeeper:latest
-    container_name: trustnexus-zookeeper
-    restart: unless-stopped
+    image: public.ecr.aws/bitnami/zookeeper:3.9.1
+    container_name: tn-zookeeper
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
 
   kafka:
-    image: bitnami/kafka:latest
-    container_name: trustnexus-kafka
-    restart: unless-stopped
+    image: public.ecr.aws/bitnami/kafka:3.6.1
+    container_name: tn-kafka
     ports:
       - "9092:9092"
     environment:
-      - KAFKA_BROKER_ID=1
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
     depends_on:
       - zookeeper
 
