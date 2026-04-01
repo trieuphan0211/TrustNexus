@@ -11,6 +11,7 @@ services:
       - "443:443"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./postgres/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
     depends_on:
       - keycloak
   # --- DATABASE LAYER ---
