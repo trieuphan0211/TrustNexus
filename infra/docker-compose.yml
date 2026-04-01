@@ -38,13 +38,13 @@ services:
   # --- MESSAGE BROKER (KAFKA) ---
   zookeeper:
     image: public.ecr.aws/bitnami/zookeeper:3.9.1
-    container_name: tn-zookeeper
+    container_name: trustnexus-zookeeper
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
 
   kafka:
     image: public.ecr.aws/bitnami/kafka:3.6.1
-    container_name: tn-kafka
+    container_name: trustnexus-kafka
     ports:
       - "9092:9092"
     environment:
