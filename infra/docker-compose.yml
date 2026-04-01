@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  # --- API GATEWAY / REVERSE PROXY ---
+  nginx:
+    image: nginx:stable-alpine
+    container_name: trustnexus-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80" 
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - keycloak
+  # --- DATABASE LAYER ---
+  postgres:
+    image: postgres:16-alpine
+    container_name: trustnexus-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+
+  # --- CACHING & LOCKING ---
+  redis:
+    image: redis:7-alpine
+    container_name: trustnexus-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning
+
+  # --- MESSAGE BROKER (KAFKA) ---
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    container_name: trustnexus-zookeeper
+    restart: unless-stopped
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: trustnexus-kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+    depends_on:
+      - zookeeper
+
+  # --- OBJECT STORAGE (S3 COMPATIBLE) ---
+  minio:
+    image: minio/minio
+    container_name: trustnexus-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: "root"
+      MINIO_ROOT_PASSWORD: "Trieuphan@0372106260"
+      MINIO_BROWSER_REDIRECT_URL: "https://s3-console.stephen.io.vn" # URL của console
+      MINIO_SERVER_URL: "https://s3.stephen.io.vn" # URL của API S3
+    command: server /data --console-address ":9001"
+    volumes:
+      - ./data/minio:/data
+
+  # --- IDENTITY & ACCESS MANAGEMENT ---
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: trustnexus-keycloak
+    restart: unless-stopped
+    command:
+      - start
+      - --http-enabled=true
+      - --hostname=https://sso.stephen.io.vn
+      - --proxy-headers=xforwarded
+      - --http-relative-path=/
+      - --hostname-backchannel-dynamic=true
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: admin
+      KC_DB_PASSWORD: admin
+    depends_on:
+      - postgres
+
+networks:
+  default:
+    name: trustnexus-network
