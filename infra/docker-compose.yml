@@ -40,12 +40,14 @@ services:
   zookeeper:
     image: public.ecr.aws/bitnami/zookeeper:3.9.1
     container_name: trustnexus-zookeeper
+    restart: unless-stopped
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
 
   kafka:
     image: public.ecr.aws/bitnami/kafka:3.6.1
     container_name: trustnexus-kafka
+    restart: unless-stopped
     ports:
       - "9092:9092"
     environment:
